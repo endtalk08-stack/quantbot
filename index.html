@@ -1,1855 +1,673 @@
 <!DOCTYPE html>
-
-<html lang="ko" class="dark">
-
-<head>
-
-  <meta charset="UTF-8" />
-
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-  <title>QuantBot Station - AI 퀀트 캐릭터 전략 대시보드</title>
-
-  <!-- Tailwind CSS CDN -->
-
-  <script src="https\://cdn.tailwindcss.com"></script>
-
-  <!-- FontAwesome Icons -->
-
-  <link rel="stylesheet" href="https\://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-
-  <!-- Google Fonts -->
-
-  <link rel="preconnect" href="https\://fonts.googleapis.com">
-
-  <link rel="preconnect" href="https\://fonts.gstatic.com" crossorigin>
-
-  <link href="https\://fonts.googleapis.com/css2?family=Poppins\:wght\@600;700;800&family=Noto+Sans+KR\:wght\@400;500;700;800&display=swap" rel="stylesheet">
-
-  <!-- Chart.js CDN -->
-
-  <script src="https\://cdn.jsdelivr.net/npm/chart.js"></script>
-
-  <script>
-
-    tailwind.config = {
-
-      darkMode: 'class',
-
-      theme: {
-
-        extend: {
-
-          fontFamily: {
-
-            sans: ['Noto Sans KR', 'sans-serif'],
-
-            display: ['Poppins', 'Noto Sans KR', 'sans-serif'],
-
-          },
-
-          colors: {
-
-            brand: {
-
-              50: '#f5f3ff',
-
-              500: '#6366f1',
-
-              600: '#4f46e5',
-
-              700: '#4338ca',
-
-            },
-
-            darkBg: '#0b0f19',
-
-            cardBg: '#131b2e',
-
-            cardBorder: '#1e293b'
-
-          }
-
-        }
-
-      }
-
-    }
-
-  </script>
-
-  <style>
-
-    body {
-
-      background-color: #080c14;
-
-      color: #f1f5f9;
-
-      font-family: 'Noto Sans KR', sans-serif;
-
-    }
-
-    .glow-indigo {
-
-      box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
-
-    }
-
-    .glow-emerald {
-
-      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.25);
-
-    }
-
-    .glow-amber {
-
-      box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.25);
-
-    }
-
-    .character-card {
-
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-    }
-
-    .character-card\:hover {
-
-      transform: translateY(-6px);
-
-    }
-
-    .character-card.active {
-
-      border-color: #6366f1;
-
-      background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, #131b2e 100%);
-
-    }
-
-  </style>
-
-</head>
-
-<body class="min-h-screen flex flex-col antialiased selection\:bg-indigo-500 selection\:text-white">
-
-  <!-- 1. Header Navigation -->
-
-  <header class="sticky top-0 z-50 backdrop-blur-md bg-darkBg/80 border-b border-slate-800">
-
-    <div class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 h-16 flex items-center justify-between">
-
-      <div class="flex items-center gap-3">
-
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-400 flex items-center justify-center text-white shadow-lg">
-
-          <i class="fa-solid fa-robot text-xl"></i>
-
-        </div>
-
-        <span class="text-xl font-display font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
-
-          QUANTBOT<span class="text-indigo-400 font-normal text-sm ml-1.5 px-2 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-500/30">STATION</span>
-
-        </span>
-
-      </div>
-
-      <div class="hidden md\:flex items-center gap-6 text-sm font-medium text-slate-300">
-
-        <a href="#characters" class="hover\:text-indigo-400 transition">캐릭터 룸</a>
-
-        <a href="#chart-section" class="hover\:text-indigo-400 transition">실시간 백테스트</a>
-
-        <a href="#calculator" class="hover\:text-indigo-400 transition">시드 계산기</a>
-
-        <a href="#live-feed" class="hover\:text-indigo-400 transition">실시간 체결 피드</a>
-
-      </div>
-
-      <div class="flex items-center gap-3">
-
-        <button onclick="openModal()" class="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 hover\:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
-
-          <i class="fa-solid fa-bell"></i>
-
-          <span>실시간 시그널 구독</span>
-
-        </button>
-
-      </div>
-
-    </div>
-
-  </header>
-
-  <!-- 2. Hero Section -->
-
-  <section class="relative pt-12 pb-16 overflow-hidden">
-
-    <div class="absolute inset-0 bg-[radial-gradient(ellipse\_80%\_80%\_at\_50%\_-20%,rgba(99,102,241,0.18),rgba(255,255,255,0))] pointer-events-none"></div>
-
-    <div class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 text-center relative z-10 space-y-4">
-
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-500/40 text-xs font-semibold text-indigo-300 mb-2">
-
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-
-        나스닥 500·1000일선 퀀트 엔진 가동 중
-
-      </div>
-
-      <h1 class="text-3xl sm\:text-5xl lg\:text-6xl font-display font-extrabold text-white tracking-tight leading-tight">
-
-        복잡한 퀀트 전략,<br class="hidden sm\:block" />
-
-        <span class="bg-gradient-to-r from-indigo-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">AI 캐릭터 페르소나</span>로 확인하세요
-
-      </h1>
-
-      <p class="text-slate-400 text-base sm\:text-lg max-w-2xl mx-auto leading-relaxed">
-
-        나스닥 과매도 파동을 포착해 계단식 분할 익절과 복리 스노우볼을 굴리는 3대 검증 모델을 실시간 계좌와 투명하게 공유합니다.
-
-      </p>
-
-    </div>
-
-  </section>
-
-  <!-- 3. Character Showcase Cards -->
-
-  <section id="characters" class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 pb-12">
-
-    <div class="flex items-center justify-between mb-6">
-
-      <div>
-
-        <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-
-          <i class="fa-solid fa-users-viewfinder text-indigo-400"></i>
-
-          대표 퀀트 캐릭터 라인업
-
-        </h2>
-
-        <p class="text-sm text-slate-400">원하는 캐릭터를 클릭하면 하단의 백테스트 차트와 전략 데이터가 실시간으로 변경됩니다.</p>
-
-      </div>
-
-      <span class="text-xs text-slate-500 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">클릭하여 전환</span>
-
-    </div>
-
-    <div class="grid grid-cols-1 md\:grid-cols-3 gap-6">
-
-      <!-- Character 1: Alpha Snow -->
-
-      <div onclick="selectCharacter('snow')" id="card-snow" class="character-card active cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-
-        <div class="absolute top-0 right-0 bg-indigo-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">수익률 1위</div>
-
-        <div>
-
-          <div class="flex items-center gap-4 mb-4">
-
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/40 border border-indigo-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
-
-              ❄️
-
-            </div>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <h3 class="text-xl font-bold text-white">알파 스노우</h3>
-
-                <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">미국 성장주</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">전략 D : 10% 계단식 무한 분할복리</p>
-
-            </div>
-
-          </div>
-
-          <p class="text-xs text-slate-300 leading-relaxed mb-4">
-
-            나스닥 500·1000선에 미국 TOP 10 진입 후 <strong>2배·3배··· 매 상승마다 10%씩 끊어먹고</strong> 잔여물량으로 100배 메가랠리를 완주합니다.
-
-          </p>
-
-        </div>
-
-        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">10년 누적 성과</div>
-
-            <div class="text-lg font-extrabold text-indigo-400 font-display">+2,355%</div>
-
-          </div>
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">1억 ➔ 최종 자산</div>
-
-            <div class="text-lg font-extrabold text-white font-display">24.5억</div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Character 2: Swing Fox -->
-
-      <div onclick="selectCharacter('fox')" id="card-fox" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-
-        <div class="absolute top-0 right-0 bg-amber-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">자금회전 1위</div>
-
-        <div>
-
-          <div class="flex items-center gap-4 mb-4">
-
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/40 border border-amber-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
-
-              🦊
-
-            </div>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <h3 class="text-xl font-bold text-white">스윙 폭스</h3>
-
-                <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">단기·스윙</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">3X 부스터 & 4시간봉 서지 스윙</p>
-
-            </div>
-
-          </div>
-
-          <p class="text-xs text-slate-300 leading-relaxed mb-4">
-
-            긴 대기시간 없이 <strong>15분 극과매도 3배 레버리지 V자 반등과 4시간봉 볼린저 서지</strong>로 주 1회 고속 복리 스노우볼을 굴립니다.
-
-          </p>
-
-        </div>
-
-        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">5년 복리 성과</div>
-
-            <div class="text-lg font-extrabold text-amber-400 font-display">CAGR 81.2%</div>
-
-          </div>
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">1억 ➔ 5년 자산</div>
-
-            <div class="text-lg font-extrabold text-white font-display">32.4억</div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      <!-- Character 3: Iron Shield -->
-
-      <div onclick="selectCharacter('shield')" id="card-shield" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-
-        <div class="absolute top-0 right-0 bg-emerald-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">안전성 1위</div>
-
-        <div>
-
-          <div class="flex items-center gap-4 mb-4">
-
-            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/40 border border-emerald-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
-
-              🛡️
-
-            </div>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <h3 class="text-xl font-bold text-white">아이언 쉴드</h3>
-
-                <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">원금보존형</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">전략 C : 2배 시 100% 원금회수 무위험</p>
-
-            </div>
-
-          </div>
-
-          <p class="text-xs text-slate-300 leading-relaxed mb-4">
-
-            주가가 2배(+100%)에 도달하면 <strong>투자 원금을 즉시 전액 회수</strong>하고, 남은 물량으로만 3.5배까지 편안하게 무위험 홀딩합니다.
-
-          </p>
-
-        </div>
-
-        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">최대 낙폭 (MDD)</div>
-
-            <div class="text-lg font-extrabold text-emerald-400 font-display">-9.8%</div>
-
-          </div>
-
-          <div class="bg-slate-900/60 rounded-xl p-2.5">
-
-            <div class="text-[11px] text-slate-400">승률 / 원금보존</div>
-
-            <div class="text-lg font-extrabold text-white font-display">100%</div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- 4. Interactive Live Chart & Detail Section -->
-
-  <section id="chart-section" class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 pb-12">
-
-    <div class="bg-cardBg border border-slate-700/80 rounded-3xl p-6 sm\:p-8 shadow-2xl space-y-6">
-
-      <div class="flex flex-col sm\:flex-row sm\:items-center justify-between gap-4 border-b border-slate-700/60 pb-6">
-
-        <div>
-
-          <div class="flex items-center gap-3">
-
-            <span id="active-char-emoji" class="text-3xl">❄️</span>
-
-            <div>
-
-              <h3 id="active-char-name" class="text-2xl font-bold text-white">알파 스노우 (Alpha Snow) 전략 대시보드</h3>
-
-              <p id="active-char-sub" class="text-xs text-slate-400">나스닥 지표 기반 10% 계단식 무한 분할익절 & 복리 재투자 모델</p>
-
-            </div>
-
-          </div>
-
-        </div>
-
-        <div class="flex items-center gap-3">
-
-          <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
-
-            <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> 실계좌 연동 검증 완료
-
-          </span>
-
-        </div>
-
-      </div>
-
-      <!-- Chart Container -->
-
-      <div class="grid grid-cols-1 lg\:grid-cols-3 gap-6">
-
-        <div class="lg\:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm\:p-6">
-
-          <div class="flex items-center justify-between mb-4">
-
-            <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2">
-
-              <i class="fa-solid fa-chart-line text-indigo-400"></i>
-
-              누적 자산 성장 곡선 (단위: 억 원, 1억 시작 기준)
-
-            </h4>
-
-            <span id="chart-badge" class="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded">최종 24.5억 (+2,355%)</span>
-
-          </div>
-
-          <div class="h-64 sm\:h-80 w-full">
-
-            <canvas id="strategyChart"></canvas>
-
-          </div>
-
-        </div>
-
-        <!-- Strategy Parameters & Rules Card -->
-
-        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
-
-          <div>
-
-            <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
-
-              <i class="fa-solid fa-sliders text-indigo-400"></i>
-
-              캐릭터 핵심 실행 공식
-
-            </h4>
-
-            <ul id="strategy-rules" class="space-y-3 text-xs text-slate-300">
-
-              <li class="flex items-start gap-2.5">
-
-                <i class="fa-solid fa-crosshairs text-indigo-400 mt-0.5"></i>
-
-                <span><strong>진입:</strong> 나스닥 500선(1차 50%) + 1000선(2차 50%) 분할 매수</span>
-
-              </li>
-
-              <li class="flex items-start gap-2.5">
-
-                <i class="fa-solid fa-stairs text-indigo-400 mt-0.5"></i>
-
-                <span><strong>익절:</strong> +100%(2배), +200%(3배), +300%(4배)... 도달 시 10%씩 매도</span>
-
-              </li>
-
-              <li class="flex items-start gap-2.5">
-
-                <i class="fa-solid fa-shield-halved text-indigo-400 mt-0.5"></i>
-
-                <span><strong>방어:</strong> 2배 달성 즉시 잔여물량 스탑로스를 본절가로 이동</span>
-
-              </li>
-
-              <li class="flex items-start gap-2.5">
-
-                <i class="fa-solid fa-arrows-rotate text-indigo-400 mt-0.5"></i>
-
-                <span><strong>복리:</strong> 회수된 현금은 다음 과매도 시그널에 100% 재투자</span>
-
-              </li>
-
-            </ul>
-
-          </div>
-
-          <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs text-indigo-200">
-
-            <div class="font-bold flex items-center gap-1.5 mb-1 text-indigo-300">
-
-              <i class="fa-solid fa-lightbulb"></i> 백테스트 핵심 포인트
-
-            </div>
-
-            <p id="strategy-summary" class="leading-relaxed text-[11px] text-slate-300">
-
-              엔비디아(120배), 테슬라(28배) 같은 메가트렌드 종목의 후반 폭등을 10% 잔여 지분으로 끝까지 추종하여 자산 24.5억을 완성했습니다.
-
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- 5. Interactive Seed Calculator -->
-
-  <section id="calculator" class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 pb-12">
-
-    <div class="bg-gradient-to-b from-cardBg to-slate-900 border border-slate-700/80 rounded-3xl p-6 sm\:p-8 shadow-xl">
-
-      <div class="max-w-3xl mx-auto text-center space-y-3 mb-8">
-
-        <h2 class="text-2xl sm\:text-3xl font-bold text-white flex items-center justify-center gap-2">
-
-          <i class="fa-solid fa-calculator text-indigo-400"></i>
-
-          내 투자금 맞춤형 시뮬레이터
-
-        </h2>
-
-        <p class="text-sm text-slate-400">투자하고자 하는 시드 머니를 입력하면 각 캐릭터별 전략에 따른 예상 결과와 종목별 배분액을 계산합니다.</p>
-
-      </div>
-
-      <div class="max-w-xl mx-auto mb-8">
-
-        <div class="flex items-center bg-slate-950 border border-indigo-500/50 rounded-2xl p-2 shadow-inner focus-within\:ring-2 focus-within\:ring-indigo-500">
-
-          <span class="text-slate-400 font-bold px-4 text-sm">시드 머니</span>
-
-          <input id="calc-seed-input" type="number" value="10000000" step="1000000" class="bg-transparent text-xl font-bold text-white w-full outline-none px-2 text-right" placeholder="10,000,000" oninput="calculateReturns()">
-
-          <span class="text-slate-300 font-bold px-4 text-sm">원</span>
-
-        </div>
-
-        <div class="flex justify-center gap-2 mt-3">
-
-          <button onclick="setSeed(10000000)" class="text-xs bg-slate-800 hover\:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">1,000만 원</button>
-
-          <button onclick="setSeed(30000000)" class="text-xs bg-slate-800 hover\:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">3,000만 원</button>
-
-          <button onclick="setSeed(50000000)" class="text-xs bg-slate-800 hover\:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">5,000만 원</button>
-
-          <button onclick="setSeed(100000000)" class="text-xs bg-slate-800 hover\:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">1억 원</button>
-
-        </div>
-
-      </div>
-
-      <!-- Result Cards -->
-
-      <div class="grid grid-cols-1 md\:grid-cols-3 gap-6">
-
-        <div class="bg-slate-900/80 border border-indigo-500/40 rounded-2xl p-5 text-center space-y-2">
-
-          <div class="text-2xl mb-1">❄️</div>
-
-          <h4 class="font-bold text-white text-sm">알파 스노우 (미국주식 복리)</h4>
-
-          <p class="text-xs text-slate-400">10개년 복리 승수 24.5배 적용</p>
-
-          <div id="res-snow" class="text-2xl font-extrabold text-indigo-400 font-display pt-2">2억 4,550만 원</div>
-
-          <p class="text-[11px] text-emerald-400 font-medium">순수익 +2억 3,550만 원</p>
-
-        </div>
-
-        <div class="bg-slate-900/80 border border-amber-500/40 rounded-2xl p-5 text-center space-y-2">
-
-          <div class="text-2xl mb-1">🦊</div>
-
-          <h4 class="font-bold text-white text-sm">스윙 폭스 (단기·스윙 부스터)</h4>
-
-          <p class="text-xs text-slate-400">5개년 고속 복리 32.4배 적용</p>
-
-          <div id="res-fox" class="text-2xl font-extrabold text-amber-400 font-display pt-2">3억 2,400만 원</div>
-
-          <p class="text-[11px] text-emerald-400 font-medium">순수익 +3억 1,400만 원</p>
-
-        </div>
-
-        <div class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-5 text-center space-y-2">
-
-          <div class="text-2xl mb-1">🛡️</div>
-
-          <h4 class="font-bold text-white text-sm">아이언 쉴드 (원금회수 무위험)</h4>
-
-          <p class="text-xs text-slate-400">10개년 원금 손실 0% 방어</p>
-
-          <div id="res-shield" class="text-2xl font-extrabold text-emerald-400 font-display pt-2">1억 247만 원</div>
-
-          <p class="text-[11px] text-emerald-400 font-medium">순수익 +9,247만 원</p>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- 6. Real-time Trade Feed Section -->
-
-  <section id="live-feed" class="max-w-7xl mx-auto px-4 sm\:px-6 lg\:px-8 pb-16">
-
-    <div class="bg-cardBg border border-slate-700/80 rounded-3xl p-6 sm\:p-8 shadow-xl space-y-6">
-
-      <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
-
-        <div>
-
-          <h3 class="text-xl font-bold text-white flex items-center gap-2">
-
-            <i class="fa-solid fa-satellite-dish text-indigo-400"></i>
-
-            실시간 퀀트 매매 & 시그널 피드
-
-          </h3>
-
-          <p class="text-xs text-slate-400">캐릭터 알고리즘이 조건 도달 시 자동 포착한 체결 내역입니다.</p>
-
-        </div>
-
-        <span class="text-xs text-slate-400 flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> LIVE CONNECTED
-
-        </span>
-
-      </div>
-
-      <div class="space-y-3">
-
-        <div class="flex flex-col sm\:flex-row items-start sm\:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
-
-          <div class="flex items-center gap-3">
-
-            <span class="text-2xl">❄️</span>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <span class="font-bold text-white text-sm">알파 스노우 (NVDA)</span>
-
-                <span class="text-[11px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-semibold">10% 계단식 분할 익절</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">매수가 대비 9배 도달로 최초 매수 수량의 10% 자동 매도 체결</p>
-
-            </div>
-
-          </div>
-
-          <div class="text-right sm\:text-right w-full sm\:w-auto flex sm\:flex-col justify-between sm\:justify-center items-center sm\:items-end">
-
-            <span class="text-emerald-400 font-bold text-sm">+800.0% 익절</span>
-
-            <span class="text-[11px] text-slate-500">방금 전 (실시간)</span>
-
-          </div>
-
-        </div>
-
-        <div class="flex flex-col sm\:flex-row items-start sm\:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
-
-          <div class="flex items-center gap-3">
-
-            <span class="text-2xl">🦊</span>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <span class="font-bold text-white text-sm">스윙 폭스 (TQQQ / SOXL)</span>
-
-                <span class="text-[11px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">15분봉 과매도 V자 진입</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">15분 RSI 22 이탈 포착으로 당일 3X 부스터 1차 매수 집행</p>
-
-            </div>
-
-          </div>
-
-          <div class="text-right sm\:text-right w-full sm\:w-auto flex sm\:flex-col justify-between sm\:justify-center items-center sm\:items-end">
-
-            <span class="text-sky-400 font-bold text-sm">신규 포지션 진입</span>
-
-            <span class="text-[11px] text-slate-500">2시간 전</span>
-
-          </div>
-
-        </div>
-
-        <div class="flex flex-col sm\:flex-row items-start sm\:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
-
-          <div class="flex items-center gap-3">
-
-            <span class="text-2xl">🛡️</span>
-
-            <div>
-
-              <div class="flex items-center gap-2">
-
-                <span class="font-bold text-white text-sm">아이언 쉴드 (AAPL)</span>
-
-                <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-semibold">원금 100% 회수 완료</span>
-
-              </div>
-
-              <p class="text-xs text-slate-400 mt-0.5">2배(+100%) 도달로 50% 매도 ➔ 잔여 물량 스탑로스 본절가 이동</p>
-
-            </div>
-
-          </div>
-
-          <div class="text-right sm\:text-right w-full sm\:w-auto flex sm\:flex-col justify-between sm\:justify-center items-center sm\:items-end">
-
-            <span class="text-emerald-400 font-bold text-sm">무위험 상태 전환</span>
-
-            <span class="text-[11px] text-slate-500">어제</span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </div>
-
-  </section>
-
-  <!-- 7. Subscription CTA Modal -->
-
-  <div id="sub-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-
-    <div class="bg-cardBg border border-indigo-500/40 rounded-3xl p-6 sm\:p-8 max-w-lg w-full shadow-2xl space-y-5 relative">
-
-      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover\:text-white text-xl">
-
-        <i class="fa-solid fa-xmark"></i>
-
-      </button>
-
-      <div class="text-center space-y-2">
-
-        <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center mx-auto text-2xl border border-indigo-500/30">
-
-          <i class="fa-solid fa-bell"></i>
-
-        </div>
-
-        <h3 class="text-2xl font-bold text-white">실시간 알림톡 구독 신청</h3>
-
-        <p class="text-xs text-slate-400">캐릭터가 500선 진입 또는 계단식 매도 시 즉시 카카오톡 푸시를 발송합니다.</p>
-
-      </div>
-
-      <div class="space-y-3">
-
-        <div>
-
-          <label class="block text-xs font-semibold text-slate-300 mb-1">성함</label>
-
-          <input type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus\:ring-2 focus\:ring-indigo-500 outline-none" placeholder="홍길동">
-
-        </div>
-
-        <div>
-
-          <label class="block text-xs font-semibold text-slate-300 mb-1">휴대폰 번호 (알림톡 수신용)</label>
-
-          <input type="tel" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus\:ring-2 focus\:ring-indigo-500 outline-none" placeholder="010-1234-5678">
-
-        </div>
-
-        <div>
-
-          <label class="block text-xs font-semibold text-slate-300 mb-1">선호 캐릭터 선택</label>
-
-          <select class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus\:ring-2 focus\:ring-indigo-500 outline-none">
-
-            <option>전체 캐릭터 알림 수신 (추천)</option>
-
-            <option>알파 스노우 (미국 대형주 복리)</option>
-
-            <option>스윙 폭스 (단기·스윙 트레이딩)</option>
-
-            <option>아이언 쉴드 (원금보존 무위험)</option>
-
-          </select>
-
-        </div>
-
-      </div>
-
-      <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
-
-        \* 본 서비스는 유사투자자문업 규정을 준수하며 1:1 투자 자문이 아닌 단방향 퀀트 알고리즘 신호 공시 서비스입니다.
-
-      </div>
-
-      <button onclick="submitSub()" class="w-full py-3 bg-indigo-600 hover\:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition">
-
-        월 39,000원 정기 구독 시작하기
-
-      </button>
-
-    </div>
-
-  </div>
-
-  <!-- Footer -->
-
-  <footer class="bg-slate-950 border-t border-slate-800 py-8 mt-auto">
-
-    <div class="max-w-7xl mx-auto px-4 text-center space-y-2 text-xs text-slate-500">
-
-      <p class="font-semibold text-slate-400">QUANTBOT STATION (캐릭터 퀀트 플랫폼)</p>
-
-      <p>본 플랫폼의 백테스트 데이터는 과거 시뮬레이션 결과이며 미래의 수익을 보장하지 않습니다.</p>
-
-      <p>© 2026 QuantBot Station. All rights reserved.</p>
-
-    </div>
-
-  </footer>
-
-  <!-- 8. Interactive Script Logic -->
-
-  <script>
-
-    const characterData = {
-
-      snow: {
-
-        name: '알파 스노우 (Alpha Snow) 전략 대시보드',
-
-        emoji: '❄️',
-
-        sub: '나스닥 지표 기반 10% 계단식 무한 분할익절 & 복리 재투자 모델',
-
-        badge: '최종 24.5억 (+2,355%)',
-
-        labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
-
-        data: [1.0, 2.8, 6.4, 11.5, 18.2, 24.55],
-
-        color: '#6366f1',
-
-        rules: [
-
-          '<strong>진입:</strong> 나스닥 500선(1차 50%) + 1000선(2차 50%) 분할 매수',
-
-          '<strong>익절:</strong> +100%(2배), +200%(3배), +300%(4배)... 도달 시 10%씩 매도',
-
-          '<strong>방어:</strong> 2배 달성 즉시 잔여물량 스탑로스를 본절가로 이동',
-
-          '<strong>복리:</strong> 회수된 현금은 다음 과매도 시그널에 100% 재투자'
-
-        ],
-
-        summary: '엔비디아(120배), 테슬라(28배) 같은 메가트렌드 종목의 후반 폭등을 10% 잔여 지분으로 끝까지 추종하여 자산 24.5억을 완성했습니다.'
-
-      },
-
-      fox: {
-
-        name: '스윙 폭스 (Swing Fox) 전략 대시보드',
-
-        emoji: '🦊',
-
-        sub: '15분 극과매도 3X 부스터 & 4시간봉 볼린저 서지 스윙 모델',
-
-        badge: '5년 1억 ➔ 32.4억 (CAGR 81.2%)',
-
-        labels: ['1년차', '2년차', '3년차', '4년차', '5년차'],
-
-        data: [1.0, 2.1, 4.8, 12.5, 32.4],
-
-        color: '#f59e0b',
-
-        rules: [
-
-          '<strong>시그널 1:</strong> 15분 RSI < 25 투매 시 3X 레버리지 진입 ➔ 익일 갭상승 청산',
-
-          '<strong>시그널 2:</strong> 4시간봉 볼린저 하단 이탈 시 주도 대장주 진입 ➔ 밴드 상단 청산',
-
-          '<strong>회전율:</strong> 월 1\~2회 고속 복리 회전으로 자금 대기시간 최소화',
-
-          '<strong>손절선:</strong> 반등 실패 시 -3% 칼손절로 MDD -12.5% 극강 방어'
-
-        ],
-
-        summary: '2\~4년씩 기다리지 않고 매달 발생하는 단기 과매도 파동을 3배 레버리지로 공략하여 5년 만에 자산을 32배로 폭발시켰습니다.'
-
-      },
-
-      shield: {
-
-        name: '아이언 쉴드 (Iron Shield) 전략 대시보드',
-
-        emoji: '🛡️',
-
-        sub: '2배 도달 시 투자 원금 100% 전액 회수 무위험 운용 모델',
-
-        badge: 'MDD -9.8% (원금 손실 0%)',
-
-        labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
-
-        data: [1.0, 2.1, 4.2, 6.8, 8.5, 10.24],
-
-        color: '#10b981',
-
-        rules: [
-
-          '<strong>원금 회수:</strong> 평단가 대비 2배(+100%) 도달 즉시 보유량 50% 매도 (원금 확보)',
-
-          '<strong>무위험 전환:</strong> 잔여 50% 주식은 손실 위험이 전혀 없는 Free Stock으로 3.5배까지 홀딩',
-
-          '<strong>스탑로스:</strong> 원금 회수 직후 스탑로스를 본절가(평단가)로 상향 고정',
-
-          '<strong>안전 파킹:</strong> 회수된 원금은 연 5% 단기 국채 ETF에 파킹 후 무위험 운용'
-
-        ],
-
-        summary: '원금을 가장 먼저 시장에서 빼내어 보관하므로 시장이 반토막 나도 계좌 손실 위험이 0%로 통제되는 최고 안정성 모델입니다.'
-
-      }
-
-    };
-
-    let chartInstance = null;
-
-    function initChart() {
-
-      const ctx = document.getElementById('strategyChart').getContext('2d');
-
-      chartInstance = new Chart(ctx, {
-
-        type: 'line',
-
-        data: {
-
-          labels: characterData.snow\.labels,
-
-          datasets: [
-
-            {
-
-              label: '캐릭터 포트폴리오 (단위: 억 원)',
-
-              data: characterData.snow\.data,
-
-              borderColor: characterData.snow\.color,
-
-              backgroundColor: 'rgba(99, 102, 241, 0.12)',
-
-              fill: true,
-
-              tension: 0.35,
-
-              borderWidth: 3,
-
-              pointBackgroundColor: characterData.snow\.color,
-
-              pointRadius: 5
-
-            },
-
-            {
-
-              label: '나스닥 지수 단순보유 (Benchmark)',
-
-              data: [1.0, 1.3, 1.8, 2.2, 2.9, 3.4],
-
-              borderColor: '#64748b',
-
-              borderDash: [5, 5],
-
-              tension: 0.35,
-
-              borderWidth: 2,
-
-              pointRadius: 0
-
-            }
-
-          ]
-
-        },
-
-        options: {
-
-          responsive: true,
-
-          maintainAspectRatio: false,
-
-          plugins: {
-
-            legend: { labels: { color: '#cbd5e1', font: { family: 'Noto Sans KR', size: 11 } } },
-
-            tooltip: { padding: 12, cornerRadius: 8 }
-
-          },
-
-          scales: {
-
-            x: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } },
-
-            y: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } }
-
-          }
-
-        }
-
-      });
-
-    }
-
-    function selectCharacter(charKey) {
-
-      // 1. Update Card Styling
-
-      ['snow', 'fox', 'shield'].forEach(k => {
-
-        const card = document.getElementById(\`card-${k}\`);
-
-        if (k === charKey) card.classList.add('active');
-
-        else card.classList.remove('active');
-
-      });
-
-      const d = characterData[charKey];
-
-      // 2. Update Header & Text
-
-      document.getElementById('active-char-name').innerText = d.name;
-
-      document.getElementById('active-char-emoji').innerText = d.emoji;
-
-      document.getElementById('active-char-sub').innerText = d.sub;
-
-      document.getElementById('chart-badge').innerText = d.badge;
-
-      document.getElementById('strategy-summary').innerText = d.summary;
-
-      // 3. Update Rules List
-
-      const rulesUl = document.getElementById('strategy-rules');
-
-      rulesUl.innerHTML = d.rules.map(r => \`
-
-        <li class="flex items-start gap-2.5">
-
-          <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
-
-          <span>${r}</span>
-
-        </li>
-
-      \`).join('');
-
-      // 4. Update Chart
-
-      chartInstance.data.labels = d.labels;
-
-      chartInstance.data.datasets[0].data = d.data;
-
-      chartInstance.data.datasets[0].borderColor = d.color;
-
-      chartInstance.data.datasets[0].pointBackgroundColor = d.color;
-
-      chartInstance.data.datasets[0].backgroundColor = d.color === '#6366f1'
-
-        ? 'rgba(99, 102, 241, 0.12)'
-
-        : (d.color === '#f59e0b' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)');
-
-      chartInstance.update();
-
-    }
-
-    // Calculator Logic
-
-    function calculateReturns() {
-
-      const seed = parseFloat(document.getElementById('calc-seed-input').value) || 0;
-
-      const snowVal = seed \* 24.55;
-
-      const foxVal = seed \* 32.4;
-
-      const shieldVal = seed \* 10.24;
-
-      document.getElementById('res-snow').innerText = formatKRW(snowVal);
-
-      document.getElementById('res-fox').innerText = formatKRW(foxVal);
-
-      document.getElementById('res-shield').innerText = formatKRW(shieldVal);
-
-    }
-
-    function setSeed(val) {
-
-      document.getElementById('calc-seed-input').value = val;
-
-      calculateReturns();
-
-    }
-
-    function formatKRW(val) {
-
-      if (val >= 100000000) {
-
-        const eok = (val / 100000000).toFixed(1);
-
-        return \`${eok}억 원\`;
-
-      } else if (val >= 10000) {
-
-        const man = Math.round(val / 10000).toLocaleString();
-
-        return \`${man}만 원\`;
-
-      }
-
-      return \`${Math.round(val).toLocaleString()}원\`;
-
-    }
-
-    // Modal Handlers
-
-    function openModal() {
-
-      const m = document.getElementById('sub-modal');
-
-      m.classList.remove('hidden');
-
-      m.classList.add('flex');
-
-    }
-
-    function closeModal() {
-
-      const m = document.getElementById('sub-modal');
-
-      m.classList.add('hidden');
-
-      m.classList.remove('flex');
-
-    }
-
-    function submitSub() {
-
-      alert('구독 신청이 성공적으로 접수되었습니다! (체험판 알림톡이 발송됩니다)');
-
-      closeModal();
-
-    }
-
-    // Init on load
-
-    window\.addEventListener('DOMContentLoaded', () => {
-
-      initChart();
-
-      calculateReturns();
-
-    });
-
-  </script>
-
-</body>
-
-</html> 이런사이트 만들어줄수 있어? 
-
-제공해주신 코드는 단일 HTML 파일로 이미 디자인과 인터랙션(캐릭터 전환, Chart.js 동적 렌더링, 시뮬레이터 계산 로직)이 완전히 구현된 상태이므로, 즉시 배포하거나 실제 상용 서비스로 확장할 수 있습니다.
-
-해당 사이트를 테스트하고 실제 서비스로 런칭하기 위한 단계별 구현 가이드입니다.
-
-**1. 현재 코드를 지금 바로 실행·배포하는 방법**
-
-- **로컬에서 바로 실행:** 코드를 메모장이나 VS Code에 붙여넣고 `index.html`로 저장한 뒤 브라우저(크롬 등)로 더블 클릭해 열면 즉시 동작합니다.
-- **무료 웹 호스팅 배포 (5분 소요):**
-  - **GitHub Pages / Netlify / Vercel:** 해당 파일을 GitHub 저장소에 올리거나 Vercel/Netlify의 Drop 배포창에 끌어다 놓으면 즉시 고유한 웹 주소(`[https://your-site.vercel.app](https://your-site.vercel.app)`)로 접속 가능합니다.
-
-**2. 실제 상용 서비스 전환 시 필요한 기술 스택**
-
-현재 코드는 정적(Mockup) 데이터 기반이므로, 실제 유료 구독과 자동 매매 신호 발송 플랫폼으로 운영하려면 다음 4가지 인프라 연동이 필요합니다.
-
-| 영역권장 기술 스택주요 구현 기능 |                                     |                                               |
-| ------------------ | ----------------------------------- | --------------------------------------------- |
-| **프론트엔드**          | Next.js (React) 또는 HTML+Tailwind 유지 | 반응형 UI, SEO 최적화, 반응형 차트 고도화                   |
-| **백엔드 & 퀀트 엔진**    | Python (FastAPI / Celery)           | Yahoo Finance / 한국투자증권 API 연동 및 500·1000일선 계산 |
-| **알림 & 결제**        | 토스페이먼츠(아임포트) + 카카오 알림톡(알리고/솔라피)     | 월 39,000원 자동 정기결제, 시그널 발생 시 카카오톡 즉시 발송        |
-| **데이터베이스**         | Supabase (PostgreSQL)               | 회원 정보, 구독 상태 관리, 실시간 체결 로그 저장                 |
-
-**3. 제작 및 지원 가능한 작업 범위**
-
-- **디자인 & UX 개선:** 다크 테마 커스텀, 모바일 반응형 터치 인터랙션 보강, 백테스트 성과 지표(샤프 지수, 승률, 최대 하락폭 그래프) 추가
-- **실시간 시세 연동:** Yahoo Finance 또는 TradingView 위젯 연동을 통한 실제 주가 데이터 차트 반영
-- **DB & 폼 수집:** 신청 폼 입력 시 구글 시트(Google Sheets API) 또는 데이터베이스로 즉시 고객 정보 저장
-- **백엔드 시그널 봇 개발:** 나스닥 지수 및 개별 종목의 이동평균선/RSI 조건을 감시하다가 조건 충족 시 알림톡을 자동 발송하는 파이썬 스크립트 작성
-
-이 프로젝트를 단순 홍보용 랜딩페이지(구글 폼/DB 연동)로 먼저 오픈하길 원하시나요, 아니면 실제 주가 데이터 및 알림톡이 발송되는 백엔드 시스템 구축부터 시작하길 원하시나요?
-
-#####
-
-주가 데이터 및 알림톡이 발송되는 백엔드 시스템 구축
-
-실시간 주가 수집, 지표 계산(500일선·RSI), 카카오 알림톡 발송을 처리하는 백엔드는 **FastAPI + APScheduler + Aligo(알림톡 API)** 조합으로 구축하는 것이 가장 빠르고 안정적입니다.
-
-전체 시스템 구조와 즉시 실행 가능한 핵심 파이썬 파이프라인 코드입니다.
-
-**시스템 구성 파이프라인**
-
-| 구성 요소기술 스택담당 역할   |                       |                                         |
-| ----------------- | --------------------- | --------------------------------------- |
-| **API 서버**        | FastAPI               | 랜딩페이지 구독 폼 접수 (`/api/subscribe`), 웹훅 수신 |
-| **시세 수집 & 퀀트 엔진** | `yfinance` + `pandas` | 나스닥 및 개별 종목 일봉/분봉 수집, 500일선 및 RSI 계산    |
-| **작업 스케줄러**       | `APScheduler`         | 정규장 개장 중 주기적 지표 갱신 (1분\~15분 주기)         |
-| **알림 게이트웨이**      | Aligo (알리고) REST API  | 조건 충족 시 구독자 DB 조회 후 카카오 알림톡 자동 발송       |
-
-**1. 퀀트 시그널 판별 엔진 (****`engine.py`****)**
-
-미국 주식 데이터를 받아 각 캐릭터의 진입/익절 조건을 감지합니다.
-
-**Python**
-
-```
-import yfinance as yf
-import pandas as pd
-
-def check_snow_signal(ticker="NVDA"):
-    """알파 스노우: 500일/1000일 이동평균선 근접 감지"""
-    df = yf.download(ticker, period="5y", interval="1d", progress=False)
-    if len(df) < 500:
-        return None
-    
-    close = df['Close'].iloc[-1].item()
-    ma500 = df['Close'].rolling(window=500).mean().iloc[-1].item()
-    
-    # 500일선 기준 오차 2% 이내 진입 시 매수 시그널
-    diff_rate = (close - ma500) / ma500 * 100
-    if -2.0 <= diff_rate <= 2.0:
-        return {
-            "character": "알파 스노우",
-            "ticker": ticker,
-            "signal": "500일선 분할 매수 진입",
-            "price": round(close, 2),
-            "detail": f"현재가 ${round(close, 2)}가 500일선(${round(ma500, 2)})에 터치했습니다."
-        }
-    return None
-
-def check_fox_signal(ticker="TQQQ"):
-    """스윙 폭스: 15분봉 RSI 25 이하 극과매도 감지"""
-    df = yf.download(ticker, period="5d", interval="15m", progress=False)
-    if len(df) < 30:
-        return None
-
-    delta = df['Close'].diff()
-    gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
-    loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
-    current_rsi = rsi.iloc[-1].item()
-    current_price = df['Close'].iloc[-1].item()
-
-    if current_rsi <= 25:
-        return {
-            "character": "스윙 폭스",
-            "ticker": ticker,
-            "signal": "15분봉 극과매도 반등 진입",
-            "price": round(current_price, 2),
-            "detail": f"15분봉 RSI {round(current_rsi, 1)} 도달. 단기 V자 반등 3X 부스터 포지션 가동."
-        }
-    return None
-
-```
-
-**2. 카카오 알림톡 발송 모듈 (****`notifier.py`****)**
-
-국내 알림톡 중계사(알리고, 솔라피 등)의 API 규격에 맞춰 메시지를 발송합니다.
-
-**Python**
-
-```
-import httpx
-
-ALIGO_API_KEY = "YOUR_ALIGO_API_KEY"
-ALIGO_USER_ID = "YOUR_ALIGO_USER_ID"
-SENDER_PHONE = "0212345678"          # 사전 등록된 발신번호
-SENDER_KEY = "YOUR_KAKAO_SENDER_KEY" # 카카오톡 채널 발신프로필키
-
-async def send_kakao_alimtalk(receiver_phone: str, signal_data: dict):
-    """카카오 비즈니스 알림톡 발송 (알리고 기준)"""
-    url = "https://kakaoapi.aligo.in/akv10/alimtalk/send/"
-    
-    # 사전에 카카오 검수를 마친 템플릿 문구 규격과 일치해야 함
-    message = (
-        f"[QuantBot Station - 시그널 포착]\n\n"
-        f"캐릭터: {signal_data['character']}\n"
-        f"대상 종목: {signal_data['ticker']}\n"
-        f"포착 신호: {signal_data['signal']}\n"
-        f"기준 가격: ${signal_data['price']}\n"
-        f"전략 내용: {signal_data['detail']}\n\n"
-        f"※ 본 알림은 퀀트 알고리즘에 기반한 기술적 분석 지표 안내입니다."
-    )
-
-    payload = {
-        "apikey": ALIGO_API_KEY,
-        "userid": ALIGO_USER_ID,
-        "senderkey": SENDER_KEY,
-        "tpl_code": "TG_0001",  # 승인받은 템플릿 코드
-        "sender": SENDER_PHONE,
-        "receiver_1": receiver_phone,
-        "subject_1": f"[{signal_data['character']}] 시그널 알림",
-        "message_1": message,
-        "failover": "Y",        # 카카오톡 실패 시 LMS 대체 발송
-        "fsubject_1": f"[{signal_data['character']}] 시그널 알림",
-        "fmessage_1": message,
-    }
-
-    async with httpx.AsyncClient() as client:
-        response = await client.post(url, data=payload)
-        return response.json()
-
-```
-
-**3. API 서버 및 주기적 모니터링 스케줄러 (****`main.py`****)**
-
-랜딩페이지 모달창의 구독 요청을 처리하고, 미국 장 시간 동안 백그라운드 루프를 실행합니다.
-
-**Python**
-
-```
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from engine import check_snow_signal, check_fox_signal
-from notifier import send_kakao_alimtalk
-
-app = FastAPI()
-
-# 프론트엔드 연동 CORS 허용
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# 간이 인메모리 구독자 저장소 (실제 운영 시 PostgreSQL/Supabase 연동)
-SUBSCRIBERS = []
-
-class SubscribeRequest(BaseModel):
-    name: str
-    phone: str
-    preferred_bot: str
-
-@app.post("/api/subscribe")
-async def subscribe(req: SubscribeRequest, bg_tasks: BackgroundTasks):
-    subscriber = {"name": req.name, "phone": req.phone, "bot": req.preferred_bot}
-    SUBSCRIBERS.append(subscriber)
-    
-    # 구독 즉시 환영 알림 발송 (비동기)
-    welcome_signal = {
-        "character": req.preferred_bot,
-        "ticker": "WELCOME",
-        "signal": "구독 등록 완료",
-        "price": 0,
-        "detail": f"{req.name}님, 실시간 퀀트 시그널 감시가 시작되었습니다."
-    }
-    bg_tasks.add_task(send_kakao_alimtalk, req.phone, welcome_signal)
-    return {"status": "success", "message": "구독 등록이 완료되었습니다."}
-
-async def run_quant_monitor():
-    """스케줄러에 의해 주기적으로 실행되는 감시 루프"""
-    print("퀀트 엔진 감시 루프 가동 중...")
-    
-    signals = []
-    # 1. 알파 스노우 지표 감시
-    snow_res = check_snow_signal("NVDA")
-    if snow_res:
-        signals.append(snow_res)
-
-    # 2. 스윙 폭스 지표 감시
-    fox_res = check_fox_signal("TQQQ")
-    if fox_res:
-        signals.append(fox_res)
-
-    # 조건 충족 시 타겟 구독자들에게 발송
-    for sig in signals:
-        for sub in SUBSCRIBERS:
-            if sub["bot"] == "전체" or sub["bot"] in sig["character"]:
-                await send_kakao_alimtalk(sub["phone"], sig)
-
-# 스케줄러 등록: 미국 정규장 시간(한국시간 22:30 ~ 익일 05:00) 5분 간격 실행
-scheduler = AsyncIOScheduler()
-scheduler.add_job(run_quant_monitor, 'interval', minutes=5)
-
-@app.on_event("startup")
-def start_scheduler():
-    scheduler.start()
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
-
-```
-
-**알림톡 연동 전 필수 준비 단계**
-
-- **카카오 채널 비즈니스 인증:** 알림톡은 사업자등록증이 연결된 **비즈니스 인증 카카오 채널**이 있어야만 발급받은 발신프로필키(`senderkey`)로 메시지를 쏠 수 있습니다.
-- **템플릿 사전 승인:** 광고성 메시지와 구별하기 위해 변수(`#{이름}`, `#{종목}`, `#{가격}`)를 포함한 템플릿 형식을 카카오 측에 사전 검수 신청해야 합니다.
-- **대체 발송(Failover) 설정:** 수신자가 카카오톡을 삭제했거나 차단한 경우를 대비해 장문 SMS(LMS)로 자동 전환되도록 발신 번호 사전 통신서비스 가입증명원을 제출해야 합니다.
-
-현재 사업자등록증과 비즈니스 카카오 채널을 이미 보유하고 계신가요, 아니면 승인 절차 없이 즉시 테스트 가능한 텔레그램 봇 연동으로 프로토타입을 먼저 검증하길 원하시나요?
-
-#####
-
-한페이지로 만들어줄수 없어?
-
-보안(API 키 노출)과 브라우저 CORS 제약으로 인해 알림톡 발송과 주가 수집은 서버 환경이 필수적이므로, **웹 화면(HTML)과 백엔드 퀀트·알림 엔진을 단 하나의 파일(****`server.py`****)로 완전 통합**한 올인원 코드입니다.
-
-터미널에서 이 파일 하나만 실행하고 브라우저로 접속하면 웹 대시보드 렌더링, 시드 시뮬레이터, 실시간 주가 감시, 카카오 알림톡 구독 접수가 즉시 구동됩니다.
-
-**Python**
-
-```
-import os
-import httpx
-import pandas as pd
-import yfinance as yf
-from fastapi import FastAPI, BackgroundTasks
-from fastapi.responses import HTMLResponse
-from pydantic import BaseModel
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-import uvicorn
-
-# ==============================================================================
-# 1. 환경 설정 및 인증 키
-# ==============================================================================
-ALIGO_API_KEY = os.getenv("ALIGO_API_KEY", "YOUR_ALIGO_API_KEY")
-ALIGO_USER_ID = os.getenv("ALIGO_USER_ID", "YOUR_ALIGO_USER_ID")
-SENDER_PHONE = os.getenv("SENDER_PHONE", "01012345678")
-SENDER_KEY = os.getenv("SENDER_KEY", "YOUR_KAKAO_SENDER_KEY")
-
-app = FastAPI(title="QuantBot Station All-in-One")
-SUBSCRIBERS = []  # 메모리 구독자 저장소
-
-# ==============================================================================
-# 2. 퀀트 알고리즘 엔진 (주가 수집 & 지표 분석)
-# ==============================================================================
-def check_snow_signal(ticker="NVDA"):
-    """알파 스노우: 500일 이동평균선 터치 감지"""
-    try:
-        df = yf.download(ticker, period="3y", interval="1d", progress=False)
-        if len(df) < 500:
-            return None
-        close = float(df['Close'].iloc[-1].item())
-        ma500 = float(df['Close'].rolling(window=500).mean().iloc[-1].item())
-        diff_rate = ((close - ma500) / ma500) * 100
-        
-        if -2.5 <= diff_rate <= 2.5:
-            return {
-                "character": "알파 스노우",
-                "ticker": ticker,
-                "price": round(close, 2),
-                "detail": f"현재가 ${round(close, 2)}가 500일선(${round(ma500, 2)})에 터치하여 분할 매수 구간에 진입했습니다."
-            }
-    except Exception as e:
-        print(f"Snow Engine Error: {e}")
-    return None
-
-def check_fox_signal(ticker="TQQQ"):
-    """스윙 폭스: 15분봉 RSI 25 이하 과매도 감지"""
-    try:
-        df = yf.download(ticker, period="5d", interval="15m", progress=False)
-        if len(df) < 20:
-            return None
-        delta = df['Close'].diff()
-        gain = delta.where(delta > 0, 0).rolling(window=14).mean()
-        loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
-        rs = gain / loss
-        rsi = 100 - (100 / (1 + rs))
-        
-        current_rsi = float(rsi.iloc[-1].item())
-        close = float(df['Close'].iloc[-1].item())
-        
-        if current_rsi <= 25:
-            return {
-                "character": "스윙 폭스",
-                "ticker": ticker,
-                "price": round(close, 2),
-                "detail": f"15분봉 RSI {round(current_rsi, 1)} 도달. 3X 레버리지 V자 단기 반등 포지션을 집행합니다."
-            }
-    except Exception as e:
-        print(f"Fox Engine Error: {e}")
-    return None
-
-# ==============================================================================
-# 3. 카카오 알림톡 발송 모듈
-# ==============================================================================
-async def send_kakao_alimtalk(receiver_phone: str, signal: dict):
-    clean_phone = receiver_phone.replace("-", "").strip()
-    msg = (
-        f"[QuantBot Station - 시그널 알림]\n\n"
-        f"캐릭터: {signal['character']}\n"
-        f"종목: {signal['ticker']}\n"
-        f"포착 가격: ${signal['price']}\n"
-        f"내용: {signal['detail']}\n\n"
-        f"※ 본 알림은 퀀트 알고리즘 기반 지표 안내입니다."
-    )
-    payload = {
-        "apikey": ALIGO_API_KEY,
-        "userid": ALIGO_USER_ID,
-        "senderkey": SENDER_KEY,
-        "tpl_code": "TG_0001",
-        "sender": SENDER_PHONE,
-        "receiver_1": clean_phone,
-        "subject_1": f"[{signal['character']}] 시그널",
-        "message_1": msg,
-        "failover": "Y",
-        "fsubject_1": f"[{signal['character']}] 시그널",
-        "fmessage_1": msg
-    }
-    async with httpx.AsyncClient() as client:
-        try:
-            res = await client.post("https://kakaoapi.aligo.in/akv10/alimtalk/send/", data=payload)
-            print(f"알림톡 전송 결과 ({clean_phone}): {res.json().get('message')}")
-        except Exception as e:
-            print(f"알림톡 발송 실패: {e}")
-
-# ==============================================================================
-# 4. 백그라운드 모니터링 스케줄러
-# ==============================================================================
-async def quant_monitoring_job():
-    signals = []
-    snow = check_snow_signal("NVDA")
-    if snow: signals.append(snow)
-    fox = check_fox_signal("TQQQ")
-    if fox: signals.append(fox)
-    
-    for sig in signals:
-        for sub in SUBSCRIBERS:
-            if sub["bot"] == "전체 캐릭터 알림 수신 (추천)" or sub["bot"].startswith(sig["character"]):
-                await send_kakao_alimtalk(sub["phone"], sig)
-
-scheduler = AsyncIOScheduler()
-scheduler.add_job(quant_monitoring_job, 'interval', minutes=5)
-
-@app.on_event("startup")
-def startup_event():
-    scheduler.start()
-
-# ==============================================================================
-# 5. API 라우터 (구독 접수)
-# ==============================================================================
-class SubRequest(BaseModel):
-    name: str
-    phone: str
-    preferred_bot: str
-
-@app.post("/api/subscribe")
-async def handle_subscribe(req: SubRequest, bg: BackgroundTasks):
-    SUBSCRIBERS.append(req.dict())
-    # 등록 즉시 가입 확인 알림톡 비동기 전송
-    welcome = {
-        "character": "퀀트봇 스테이션",
-        "ticker": "시스템",
-        "price": 0.0,
-        "detail": f"{req.name}님, 정상적으로 구독 등록되었습니다. 타겟 지표 도달 시 즉시 알림이 발송됩니다."
-    }
-    bg.add_task(send_kakao_alimtalk, req.phone, welcome)
-    return {"status": "success", "message": f"{req.name}님의 실시간 시그널 구독이 완료되었습니다."}
-
-# ==============================================================================
-# 6. 통합 프론트엔드 대시보드 (GET /)
-# ==============================================================================
-@app.get("/", response_class=HTMLResponse)
-def index():
-    return """<!DOCTYPE html>
 <html lang="ko" class="dark">
 <head>
-  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QuantBot Station - AI 퀀트 캐릭터 전략 대시보드</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
-          fontFamily: { sans: ['Noto Sans KR', 'sans-serif'], display: ['Poppins', 'Noto Sans KR', 'sans-serif'] },
-          colors: { darkBg: '#080c14', cardBg: '#131b2e' }
+          fontFamily: {
+            sans: ['Noto Sans KR', 'sans-serif'],
+            display: ['Poppins', 'Noto Sans KR', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f5f3ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            darkBg: '#0b0f19',
+            cardBg: '#131b2e',
+            cardBorder: '#1e293b'
+          }
         }
       }
     }
   </script>
   <style>
-    body { background-color: #080c14; color: #f1f5f9; font-family: 'Noto Sans KR', sans-serif; }
-    .character-card { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
-    .character-card:hover { transform: translateY(-6px); }
-    .character-card.active { border-color: #6366f1; background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, #131b2e 100%); }
+    body {
+      background-color: #080c14;
+      color: #f1f5f9;
+      font-family: 'Noto Sans KR', sans-serif;
+    }
+    .glow-indigo {
+      box-shadow: 0 0 35px -5px rgba(99, 102, 241, 0.25);
+    }
+    .glow-emerald {
+      box-shadow: 0 0 35px -5px rgba(16, 185, 129, 0.25);
+    }
+    .glow-amber {
+      box-shadow: 0 0 35px -5px rgba(245, 158, 11, 0.25);
+    }
+    .character-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .character-card:hover {
+      transform: translateY(-6px);
+    }
+    .character-card.active {
+      border-color: #6366f1;
+      background: linear-gradient(180deg, rgba(99, 102, 241, 0.12) 0%, #131b2e 100%);
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased">
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- 1. Header Navigation -->
   <header class="sticky top-0 z-50 backdrop-blur-md bg-darkBg/80 border-b border-slate-800">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-emerald-400 flex items-center justify-center text-white shadow-lg">
           <i class="fa-solid fa-robot text-xl"></i>
         </div>
-        <span class="text-xl font-display font-extrabold tracking-tight text-white">QUANTBOT<span class="text-indigo-400 text-sm ml-1.5 px-2 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-500/30">STATION</span></span>
+        <span class="text-xl font-display font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-indigo-300 bg-clip-text text-transparent">
+          QUANTBOT<span class="text-indigo-400 font-normal text-sm ml-1.5 px-2 py-0.5 rounded-full bg-indigo-950/60 border border-indigo-500/30">STATION</span>
+        </span>
       </div>
-      <button onclick="openModal()" class="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg transition flex items-center gap-2">
-        <i class="fa-solid fa-bell"></i><span>실시간 시그널 구독</span>
-      </button>
+      
+      <div class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-300">
+        <a href="#characters" class="hover:text-indigo-400 transition">캐릭터 룸</a>
+        <a href="#chart-section" class="hover:text-indigo-400 transition">실시간 백테스트</a>
+        <a href="#calculator" class="hover:text-indigo-400 transition">시드 계산기</a>
+        <a href="#live-feed" class="hover:text-indigo-400 transition">실시간 체결 피드</a>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="openModal()" class="px-4 py-2 text-sm font-semibold rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition flex items-center gap-2">
+          <i class="fa-solid fa-bell"></i>
+          <span>실시간 시그널 구독</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <main class="flex-grow">
-    <section class="text-center pt-10 pb-8 px-4">
-      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-500/40 text-xs font-semibold text-indigo-300 mb-4">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> 실시간 퀀트 모니터링 엔진 백엔드 가동 중
+  <!-- 2. Hero Section -->
+  <section class="relative pt-12 pb-16 overflow-hidden">
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(99,102,241,0.18),rgba(255,255,255,0))] pointer-events-none"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-4">
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-950/70 border border-indigo-500/40 text-xs font-semibold text-indigo-300 mb-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        나스닥 500·1000일선 퀀트 엔진 가동 중
       </div>
-      <h1 class="text-3xl sm:text-5xl font-display font-extrabold text-white">복잡한 퀀트 전략, <span class="bg-gradient-to-r from-indigo-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">AI 캐릭터</span>로 확인하세요</h1>
-    </section>
+      <h1 class="text-3xl sm:text-5xl lg:text-6xl font-display font-extrabold text-white tracking-tight leading-tight">
+        복잡한 퀀트 전략,<br class="hidden sm:block" />
+        <span class="bg-gradient-to-r from-indigo-400 via-emerald-300 to-amber-300 bg-clip-text text-transparent">AI 캐릭터 페르소나</span>로 확인하세요
+      </h1>
+      <p class="text-slate-400 text-base sm:text-lg max-w-2xl mx-auto leading-relaxed">
+        나스닥 과매도 파동을 포착해 계단식 분할 익절과 복리 스노우볼을 굴리는 3대 검증 모델을 실시간 계좌와 투명하게 공유합니다.
+      </p>
+    </div>
+  </section>
 
-    <!-- 캐릭터 선택 카드 -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8">
+  <!-- 3. Character Showcase Cards -->
+  <section id="characters" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-users-viewfinder text-indigo-400"></i>
+          대표 퀀트 캐릭터 라인업
+        </h2>
+        <p class="text-sm text-slate-400">원하는 캐릭터를 클릭하면 하단의 백테스트 차트와 전략 데이터가 실시간으로 변경됩니다.</p>
+      </div>
+      <span class="text-xs text-slate-500 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700">클릭하여 전환</span>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Character 1: Alpha Snow -->
+      <div onclick="selectCharacter('snow')" id="card-snow" class="character-card active cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute top-0 right-0 bg-indigo-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">수익률 1위</div>
+        <div>
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/40 border border-indigo-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
+              ❄️
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-bold text-white">알파 스노우</h3>
+                <span class="text-xs bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded border border-indigo-500/30">미국 성장주</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">전략 D : 10% 계단식 무한 분할복리</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-4">
+            나스닥 500·1000선에 미국 TOP 10 진입 후 <strong>2배·3배··· 매 상승마다 10%씩 끊어먹고</strong> 잔여물량으로 100배 메가랠리를 완주합니다.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">10년 누적 성과</div>
+            <div class="text-lg font-extrabold text-indigo-400 font-display">+2,355%</div>
+          </div>
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">1억 ➔ 최종 자산</div>
+            <div class="text-lg font-extrabold text-white font-display">24.5억</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Character 2: Swing Fox -->
+      <div onclick="selectCharacter('fox')" id="card-fox" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute top-0 right-0 bg-amber-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">자금회전 1위</div>
+        <div>
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/40 border border-amber-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
+              🦊
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-bold text-white">스윙 폭스</h3>
+                <span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded border border-amber-500/30">단기·스윙</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">3X 부스터 & 4시간봉 서지 스윙</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-4">
+            긴 대기시간 없이 <strong>15분 극과매도 3배 레버리지 V자 반등과 4시간봉 볼린저 서지</strong>로 주 1회 고속 복리 스노우볼을 굴립니다.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">5년 복리 성과</div>
+            <div class="text-lg font-extrabold text-amber-400 font-display">CAGR 81.2%</div>
+          </div>
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">1억 ➔ 5년 자산</div>
+            <div class="text-lg font-extrabold text-white font-display">32.4억</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Character 3: Iron Shield -->
+      <div onclick="selectCharacter('shield')" id="card-shield" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+        <div class="absolute top-0 right-0 bg-emerald-600 text-[11px] font-bold px-3 py-1 rounded-bl-xl text-white">안전성 1위</div>
+        <div>
+          <div class="flex items-center gap-4 mb-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/40 border border-emerald-500/40 p-1 flex items-center justify-center text-3xl shadow-md">
+              🛡️
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="text-xl font-bold text-white">아이언 쉴드</h3>
+                <span class="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded border border-emerald-500/30">원금보존형</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">전략 C : 2배 시 100% 원금회수 무위험</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 leading-relaxed mb-4">
+            주가가 2배(+100%)에 도달하면 <strong>투자 원금을 즉시 전액 회수</strong>하고, 남은 물량으로만 3.5배까지 편안하게 무위험 홀딩합니다.
+          </p>
+        </div>
+        <div class="pt-4 border-t border-slate-700/60 grid grid-cols-2 gap-2 text-center">
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">최대 낙폭 (MDD)</div>
+            <div class="text-lg font-extrabold text-emerald-400 font-display">-9.8%</div>
+          </div>
+          <div class="bg-slate-900/60 rounded-xl p-2.5">
+            <div class="text-[11px] text-slate-400">승률 / 원금보존</div>
+            <div class="text-lg font-extrabold text-white font-display">100%</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- 4. Interactive Live Chart & Detail Section -->
+  <section id="chart-section" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <div class="bg-cardBg border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/60 pb-6">
+        <div>
+          <div class="flex items-center gap-3">
+            <span id="active-char-emoji" class="text-3xl">❄️</span>
+            <div>
+              <h3 id="active-char-name" class="text-2xl font-bold text-white">알파 스노우 (Alpha Snow) 전략 대시보드</h3>
+              <p id="active-char-sub" class="text-xs text-slate-400">나스닥 지표 기반 10% 계단식 무한 분할익절 & 복리 재투자 모델</p>
+            </div>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center gap-1.5 text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-3 py-1.5 rounded-xl">
+            <i class="fa-solid fa-circle text-[8px] animate-pulse"></i> 실계좌 연동 검증 완료
+          </span>
+        </div>
+      </div>
+
+      <!-- Chart Container -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-slate-900/70 border border-slate-800 rounded-2xl p-4 sm:p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h4 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+              <i class="fa-solid fa-chart-line text-indigo-400"></i>
+              누적 자산 성장 곡선 (단위: 억 원, 1억 시작 기준)
+            </h4>
+            <span id="chart-badge" class="text-xs bg-indigo-600/20 text-indigo-300 px-2 py-0.5 rounded">최종 24.5억 (+2,355%)</span>
+          </div>
+          <div class="h-64 sm:h-80 w-full">
+            <canvas id="strategyChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Strategy Parameters & Rules Card -->
+        <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between space-y-4">
+          <div>
+            <h4 class="text-sm font-bold text-white mb-3 flex items-center gap-2">
+              <i class="fa-solid fa-sliders text-indigo-400"></i>
+              캐릭터 핵심 실행 공식
+            </h4>
+            <ul id="strategy-rules" class="space-y-3 text-xs text-slate-300">
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-crosshairs text-indigo-400 mt-0.5"></i>
+                <span><strong>진입:</strong> 나스닥 500선(1차 50%) + 1000선(2차 50%) 분할 매수</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-stairs text-indigo-400 mt-0.5"></i>
+                <span><strong>익절:</strong> +100%(2배), +200%(3배), +300%(4배)... 도달 시 10%씩 매도</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-shield-halved text-indigo-400 mt-0.5"></i>
+                <span><strong>방어:</strong> 2배 달성 즉시 잔여물량 스탑로스를 본절가로 이동</span>
+              </li>
+              <li class="flex items-start gap-2.5">
+                <i class="fa-solid fa-arrows-rotate text-indigo-400 mt-0.5"></i>
+                <span><strong>복리:</strong> 회수된 현금은 다음 과매도 시그널에 100% 재투자</span>
+              </li>
+            </ul>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-indigo-950/40 border border-indigo-500/20 text-xs text-indigo-200">
+            <div class="font-bold flex items-center gap-1.5 mb-1 text-indigo-300">
+              <i class="fa-solid fa-lightbulb"></i> 백테스트 핵심 포인트
+            </div>
+            <p id="strategy-summary" class="leading-relaxed text-[11px] text-slate-300">
+              엔비디아(120배), 테슬라(28배) 같은 메가트렌드 종목의 후반 폭등을 10% 잔여 지분으로 끝까지 추종하여 자산 24.5억을 완성했습니다.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5. Interactive Seed Calculator -->
+  <section id="calculator" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12">
+    <div class="bg-gradient-to-b from-cardBg to-slate-900 border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-xl">
+      <div class="max-w-3xl mx-auto text-center space-y-3 mb-8">
+        <h2 class="text-2xl sm:text-3xl font-bold text-white flex items-center justify-center gap-2">
+          <i class="fa-solid fa-calculator text-indigo-400"></i>
+          내 투자금 맞춤형 시뮬레이터
+        </h2>
+        <p class="text-sm text-slate-400">투자하고자 하는 시드 머니를 입력하면 각 캐릭터별 전략에 따른 예상 결과와 종목별 배분액을 계산합니다.</p>
+      </div>
+
+      <div class="max-w-xl mx-auto mb-8">
+        <div class="flex items-center bg-slate-950 border border-indigo-500/50 rounded-2xl p-2 shadow-inner focus-within:ring-2 focus-within:ring-indigo-500">
+          <span class="text-slate-400 font-bold px-4 text-sm">시드 머니</span>
+          <input id="calc-seed-input" type="number" value="10000000" step="1000000" class="bg-transparent text-xl font-bold text-white w-full outline-none px-2 text-right" placeholder="10,000,000" oninput="calculateReturns()">
+          <span class="text-slate-300 font-bold px-4 text-sm">원</span>
+        </div>
+        <div class="flex justify-center gap-2 mt-3">
+          <button onclick="setSeed(10000000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">1,000만 원</button>
+          <button onclick="setSeed(30000000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">3,000만 원</button>
+          <button onclick="setSeed(50000000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">5,000만 원</button>
+          <button onclick="setSeed(100000000)" class="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1 rounded-lg border border-slate-700">1억 원</button>
+        </div>
+      </div>
+
+      <!-- Result Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div onclick="selectCharacter('snow')" id="card-snow" class="character-card active cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex items-center gap-4 mb-3">
-            <span class="text-4xl">❄️</span>
-            <div><h3 class="text-xl font-bold text-white">알파 스노우</h3><p class="text-xs text-indigo-400">10% 계단식 무한 분할복리</p></div>
-          </div>
-          <p class="text-xs text-slate-300 mb-4">나스닥 500·1000선 터치 시 진입 후 2배·3배 매 상승마다 10%씩 분할 익절</p>
-          <div class="bg-slate-900/60 rounded-xl p-2 text-center text-indigo-400 font-extrabold">+2,355% 성과</div>
+        <div class="bg-slate-900/80 border border-indigo-500/40 rounded-2xl p-5 text-center space-y-2">
+          <div class="text-2xl mb-1">❄️</div>
+          <h4 class="font-bold text-white text-sm">알파 스노우 (미국주식 복리)</h4>
+          <p class="text-xs text-slate-400">10개년 복리 승수 24.5배 적용</p>
+          <div id="res-snow" class="text-2xl font-extrabold text-indigo-400 font-display pt-2">2억 4,550만 원</div>
+          <p class="text-[11px] text-emerald-400 font-medium">순수익 +2억 3,550만 원</p>
         </div>
 
-        <div onclick="selectCharacter('fox')" id="card-fox" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex items-center gap-4 mb-3">
-            <span class="text-4xl">🦊</span>
-            <div><h3 class="text-xl font-bold text-white">스윙 폭스</h3><p class="text-xs text-amber-400">3X 부스터 & 15분 과매도</p></div>
-          </div>
-          <p class="text-xs text-slate-300 mb-4">15분 RSI 25 이하 과매도 파동을 포착해 3배 레버리지 V자 반등을 고속 회전</p>
-          <div class="bg-slate-900/60 rounded-xl p-2 text-center text-amber-400 font-extrabold">CAGR 81.2%</div>
+        <div class="bg-slate-900/80 border border-amber-500/40 rounded-2xl p-5 text-center space-y-2">
+          <div class="text-2xl mb-1">🦊</div>
+          <h4 class="font-bold text-white text-sm">스윙 폭스 (단기·스윙 부스터)</h4>
+          <p class="text-xs text-slate-400">5개년 고속 복리 32.4배 적용</p>
+          <div id="res-fox" class="text-2xl font-extrabold text-amber-400 font-display pt-2">3억 2,400만 원</div>
+          <p class="text-[11px] text-emerald-400 font-medium">순수익 +3억 1,400만 원</p>
         </div>
 
-        <div onclick="selectCharacter('shield')" id="card-shield" class="character-card cursor-pointer bg-cardBg border border-slate-700/80 rounded-2xl p-6">
-          <div class="flex items-center gap-4 mb-3">
-            <span class="text-4xl">🛡️</span>
-            <div><h3 class="text-xl font-bold text-white">아이언 쉴드</h3><p class="text-xs text-emerald-400">2배 시 100% 원금회수</p></div>
-          </div>
-          <p class="text-xs text-slate-300 mb-4">주가 +100% 도달 즉시 원금을 전액 회수하여 손실 위험 0%로 무위험 운용</p>
-          <div class="bg-slate-900/60 rounded-xl p-2 text-center text-emerald-400 font-extrabold">MDD -9.8% 통제</div>
+        <div class="bg-slate-900/80 border border-emerald-500/40 rounded-2xl p-5 text-center space-y-2">
+          <div class="text-2xl mb-1">🛡️</div>
+          <h4 class="font-bold text-white text-sm">아이언 쉴드 (원금회수 무위험)</h4>
+          <p class="text-xs text-slate-400">10개년 원금 손실 0% 방어</p>
+          <div id="res-shield" class="text-2xl font-extrabold text-emerald-400 font-display pt-2">1억 247만 원</div>
+          <p class="text-[11px] text-emerald-400 font-medium">순수익 +9,247만 원</p>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
 
-    <!-- 차트 섹션 -->
-    <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10">
-      <div class="bg-cardBg border border-slate-700/80 rounded-3xl p-6">
-        <h3 id="active-char-name" class="text-xl font-bold text-white mb-2">알파 스노우 (Alpha Snow) 전략 대시보드</h3>
-        <p id="active-char-sub" class="text-xs text-slate-400 mb-4">나스닥 지표 기반 10% 계단식 무한 분할익절 & 복리 재투자 모델</p>
-        <div class="h-64 sm:h-80 w-full"><canvas id="strategyChart"></canvas></div>
-      </div>
-    </section>
-
-    <!-- 시드 계산기 -->
-    <section class="max-w-4xl mx-auto px-4 pb-12">
-      <div class="bg-cardBg border border-slate-700 rounded-3xl p-6 text-center space-y-4">
-        <h3 class="text-xl font-bold text-white">투자금 맞춤 시뮬레이터</h3>
-        <div class="flex max-w-sm mx-auto items-center bg-slate-950 border border-indigo-500/50 rounded-xl p-2">
-          <input id="calc-seed" type="number" value="10000000" step="1000000" class="bg-transparent text-white font-bold px-3 w-full outline-none text-right" oninput="recalc()">
-          <span class="text-slate-400 px-2 text-sm">원</span>
+  <!-- 6. Real-time Trade Feed Section -->
+  <section id="live-feed" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+    <div class="bg-cardBg border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+      <div class="flex items-center justify-between border-b border-slate-700/60 pb-4">
+        <div>
+          <h3 class="text-xl font-bold text-white flex items-center gap-2">
+            <i class="fa-solid fa-satellite-dish text-indigo-400"></i>
+            실시간 퀀트 매매 & 시그널 피드
+          </h3>
+          <p class="text-xs text-slate-400">캐릭터 알고리즘이 조건 도달 시 자동 포착한 체결 내역입니다.</p>
         </div>
-        <div class="grid grid-cols-3 gap-3 pt-2">
-          <div class="bg-slate-900/80 p-3 rounded-xl"><p class="text-xs text-slate-400">알파 스노우</p><p id="res-snow" class="font-bold text-indigo-400 mt-1">2.45억</p></div>
-          <div class="bg-slate-900/80 p-3 rounded-xl"><p class="text-xs text-slate-400">스윙 폭스</p><p id="res-fox" class="font-bold text-amber-400 mt-1">3.24억</p></div>
-          <div class="bg-slate-900/80 p-3 rounded-xl"><p class="text-xs text-slate-400">아이언 쉴드</p><p id="res-shield" class="font-bold text-emerald-400 mt-1">1.02억</p></div>
-        </div>
+        <span class="text-xs text-slate-400 flex items-center gap-1.5 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> LIVE CONNECTED
+        </span>
       </div>
-    </section>
-  </main>
 
-  <!-- 구독 모달 -->
-  <div id="sub-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
-    <div class="bg-cardBg border border-indigo-500/40 rounded-2xl p-6 max-w-md w-full space-y-4 relative">
-      <button onclick="closeModal()" class="absolute top-4 right-4 text-slate-400 text-xl"><i class="fa-solid fa-xmark"></i></button>
-      <h3 class="text-xl font-bold text-white text-center">실시간 시그널 알림톡 신청</h3>
       <div class="space-y-3">
-        <input id="sub-name" type="text" placeholder="성함" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white outline-none">
-        <input id="sub-phone" type="tel" placeholder="휴대폰 번호 (010-1234-5678)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white outline-none">
-        <select id="sub-bot" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-white outline-none">
-          <option>전체 캐릭터 알림 수신 (추천)</option>
-          <option>알파 스노우 (미국 대형주 복리)</option>
-          <option>스윙 폭스 (단기·스윙 트레이딩)</option>
-          <option>아이언 쉴드 (원금보존 무위험)</option>
-        </select>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">❄️</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-sm">알파 스노우 (NVDA)</span>
+                <span class="text-[11px] bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded font-semibold">10% 계단식 분할 익절</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">매수가 대비 9배 도달로 최초 매수 수량의 10% 자동 매도 체결</p>
+            </div>
+          </div>
+          <div class="text-right sm:text-right w-full sm:w-auto flex sm:flex-col justify-between sm:justify-center items-center sm:items-end">
+            <span class="text-emerald-400 font-bold text-sm">+800.0% 익절</span>
+            <span class="text-[11px] text-slate-500">방금 전 (실시간)</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🦊</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-sm">스윙 폭스 (TQQQ / SOXL)</span>
+                <span class="text-[11px] bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded font-semibold">15분봉 과매도 V자 진입</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">15분 RSI 22 이탈 포착으로 당일 3X 부스터 1차 매수 집행</p>
+            </div>
+          </div>
+          <div class="text-right sm:text-right w-full sm:w-auto flex sm:flex-col justify-between sm:justify-center items-center sm:items-end">
+            <span class="text-sky-400 font-bold text-sm">신규 포지션 진입</span>
+            <span class="text-[11px] text-slate-500">2시간 전</span>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-xl bg-slate-900/80 border border-slate-800 gap-3">
+          <div class="flex items-center gap-3">
+            <span class="text-2xl">🛡️</span>
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-white text-sm">아이언 쉴드 (AAPL)</span>
+                <span class="text-[11px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded font-semibold">원금 100% 회수 완료</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">2배(+100%) 도달로 50% 매도 ➔ 잔여 물량 스탑로스 본절가 이동</p>
+            </div>
+          </div>
+          <div class="text-right sm:text-right w-full sm:w-auto flex sm:flex-col justify-between sm:justify-center items-center sm:items-end">
+            <span class="text-emerald-400 font-bold text-sm">무위험 상태 전환</span>
+            <span class="text-[11px] text-slate-500">어제</span>
+          </div>
+        </div>
       </div>
-      <button onclick="submitSubscribe()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl transition">신청 완료 및 알림톡 수신</button>
+    </div>
+  </section>
+
+  <!-- 7. Subscription CTA Modal -->
+  <div id="sub-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="bg-cardBg border border-indigo-500/40 rounded-3xl p-6 sm:p-8 max-w-lg w-full shadow-2xl space-y-5 relative">
+      <button onclick="closeModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white text-xl">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="w-12 h-12 rounded-2xl bg-indigo-600/30 text-indigo-400 flex items-center justify-center mx-auto text-2xl border border-indigo-500/30">
+          <i class="fa-solid fa-bell"></i>
+        </div>
+        <h3 class="text-2xl font-bold text-white">실시간 알림톡 구독 신청</h3>
+        <p class="text-xs text-slate-400">캐릭터가 500선 진입 또는 계단식 매도 시 즉시 카카오톡 푸시를 발송합니다.</p>
+      </div>
+
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">성함</label>
+          <input type="text" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="홍길동">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">휴대폰 번호 (알림톡 수신용)</label>
+          <input type="tel" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="010-1234-5678">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">선호 캐릭터 선택</label>
+          <select class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-sm text-white focus:ring-2 focus:ring-indigo-500 outline-none">
+            <option>전체 캐릭터 알림 수신 (추천)</option>
+            <option>알파 스노우 (미국 대형주 복리)</option>
+            <option>스윙 폭스 (단기·스윙 트레이딩)</option>
+            <option>아이언 쉴드 (원금보존 무위험)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-[11px] text-slate-400 leading-relaxed">
+        * 본 서비스는 유사투자자문업 규정을 준수하며 1:1 투자 자문이 아닌 단방향 퀀트 알고리즘 신호 공시 서비스입니다.
+      </div>
+
+      <button onclick="submitSub()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30 transition">
+        월 39,000원 정기 구독 시작하기
+      </button>
     </div>
   </div>
 
+  <!-- Footer -->
+  <footer class="bg-slate-950 border-t border-slate-800 py-8 mt-auto">
+    <div class="max-w-7xl mx-auto px-4 text-center space-y-2 text-xs text-slate-500">
+      <p class="font-semibold text-slate-400">QUANTBOT STATION (캐릭터 퀀트 플랫폼)</p>
+      <p>본 플랫폼의 백테스트 데이터는 과거 시뮬레이션 결과이며 미래의 수익을 보장하지 않습니다.</p>
+      <p>© 2026 QuantBot Station. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- 8. Interactive Script Logic -->
   <script>
-    const charData = {
-      snow: { name: '알파 스노우 전략 대시보드', sub: '나스닥 500·1000선 터치 분할익절 모델', data: [1.0, 2.8, 6.4, 11.5, 18.2, 24.55], color: '#6366f1' },
-      fox: { name: '스윙 폭스 전략 대시보드', sub: '15분봉 RSI 25 이하 3X 레버리지 반등 모델', data: [1.0, 2.1, 4.8, 12.5, 32.4], color: '#f59e0b' },
-      shield: { name: '아이언 쉴드 전략 대시보드', sub: '2배 도달 시 원금 100% 회수 무위험 모델', data: [1.0, 2.1, 4.2, 6.8, 8.5, 10.24], color: '#10b981' }
+    const characterData = {
+      snow: {
+        name: '알파 스노우 (Alpha Snow) 전략 대시보드',
+        emoji: '❄️',
+        sub: '나스닥 지표 기반 10% 계단식 무한 분할익절 & 복리 재투자 모델',
+        badge: '최종 24.5억 (+2,355%)',
+        labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
+        data: [1.0, 2.8, 6.4, 11.5, 18.2, 24.55],
+        color: '#6366f1',
+        rules: [
+          '<strong>진입:</strong> 나스닥 500선(1차 50%) + 1000선(2차 50%) 분할 매수',
+          '<strong>익절:</strong> +100%(2배), +200%(3배), +300%(4배)... 도달 시 10%씩 매도',
+          '<strong>방어:</strong> 2배 달성 즉시 잔여물량 스탑로스를 본절가로 이동',
+          '<strong>복리:</strong> 회수된 현금은 다음 과매도 시그널에 100% 재투자'
+        ],
+        summary: '엔비디아(120배), 테슬라(28배) 같은 메가트렌드 종목의 후반 폭등을 10% 잔여 지분으로 끝까지 추종하여 자산 24.5억을 완성했습니다.'
+      },
+      fox: {
+        name: '스윙 폭스 (Swing Fox) 전략 대시보드',
+        emoji: '🦊',
+        sub: '15분 극과매도 3X 부스터 & 4시간봉 볼린저 서지 스윙 모델',
+        badge: '5년 1억 ➔ 32.4억 (CAGR 81.2%)',
+        labels: ['1년차', '2년차', '3년차', '4년차', '5년차'],
+        data: [1.0, 2.1, 4.8, 12.5, 32.4],
+        color: '#f59e0b',
+        rules: [
+          '<strong>시그널 1:</strong> 15분 RSI < 25 투매 시 3X 레버리지 진입 ➔ 익일 갭상승 청산',
+          '<strong>시그널 2:</strong> 4시간봉 볼린저 하단 이탈 시 주도 대장주 진입 ➔ 밴드 상단 청산',
+          '<strong>회전율:</strong> 월 1~2회 고속 복리 회전으로 자금 대기시간 최소화',
+          '<strong>손절선:</strong> 반등 실패 시 -3% 칼손절로 MDD -12.5% 극강 방어'
+        ],
+        summary: '2~4년씩 기다리지 않고 매달 발생하는 단기 과매도 파동을 3배 레버리지로 공략하여 5년 만에 자산을 32배로 폭발시켰습니다.'
+      },
+      shield: {
+        name: '아이언 쉴드 (Iron Shield) 전략 대시보드',
+        emoji: '🛡️',
+        sub: '2배 도달 시 투자 원금 100% 전액 회수 무위험 운용 모델',
+        badge: 'MDD -9.8% (원금 손실 0%)',
+        labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
+        data: [1.0, 2.1, 4.2, 6.8, 8.5, 10.24],
+        color: '#10b981',
+        rules: [
+          '<strong>원금 회수:</strong> 평단가 대비 2배(+100%) 도달 즉시 보유량 50% 매도 (원금 확보)',
+          '<strong>무위험 전환:</strong> 잔여 50% 주식은 손실 위험이 전혀 없는 Free Stock으로 3.5배까지 홀딩',
+          '<strong>스탑로스:</strong> 원금 회수 직후 스탑로스를 본절가(평단가)로 상향 고정',
+          '<strong>안전 파킹:</strong> 회수된 원금은 연 5% 단기 국채 ETF에 파킹 후 무위험 운용'
+        ],
+        summary: '원금을 가장 먼저 시장에서 빼내어 보관하므로 시장이 반토막 나도 계좌 손실 위험이 0%로 통제되는 최고 안정성 모델입니다.'
+      }
     };
-    let chart;
+
+    let chartInstance = null;
 
     function initChart() {
       const ctx = document.getElementById('strategyChart').getContext('2d');
-      chart = new Chart(ctx, {
+      chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: ['2016', '2018', '2020', '2022', '2024', '2026'],
-          datasets: [{ label: '캐릭터 누적 자산 (억)', data: charData.snow.data, borderColor: '#6366f1', borderWidth: 3, fill: true, backgroundColor: 'rgba(99,102,241,0.1)' }]
+          labels: characterData.snow.labels,
+          datasets: [
+            {
+              label: '캐릭터 포트폴리오 (단위: 억 원)',
+              data: characterData.snow.data,
+              borderColor: characterData.snow.color,
+              backgroundColor: 'rgba(99, 102, 241, 0.12)',
+              fill: true,
+              tension: 0.35,
+              borderWidth: 3,
+              pointBackgroundColor: characterData.snow.color,
+              pointRadius: 5
+            },
+            {
+              label: '나스닥 지수 단순보유 (Benchmark)',
+              data: [1.0, 1.3, 1.8, 2.2, 2.9, 3.4],
+              borderColor: '#64748b',
+              borderDash: [5, 5],
+              tension: 0.35,
+              borderWidth: 2,
+              pointRadius: 0
+            }
+          ]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { family: 'Noto Sans KR', size: 11 } } },
+            tooltip: { padding: 12, cornerRadius: 8 }
+          },
+          scales: {
+            x: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } },
+            y: { grid: { color: 'rgba(51, 65, 85, 0.4)' }, ticks: { color: '#94a3b8' } }
+          }
+        }
       });
     }
 
-    function selectCharacter(key) {
-      ['snow', 'fox', 'shield'].forEach(k => document.getElementById(`card-${k}`).classList.toggle('active', k === key));
-      const d = charData[key];
+    function selectCharacter(charKey) {
+      // 1. Update Card Styling
+      ['snow', 'fox', 'shield'].forEach(k => {
+        const card = document.getElementById(`card-${k}`);
+        if (k === charKey) card.classList.add('active');
+        else card.classList.remove('active');
+      });
+
+      const d = characterData[charKey];
+
+      // 2. Update Header & Text
       document.getElementById('active-char-name').innerText = d.name;
+      document.getElementById('active-char-emoji').innerText = d.emoji;
       document.getElementById('active-char-sub').innerText = d.sub;
-      chart.data.datasets[0].data = d.data;
-      chart.data.datasets[0].borderColor = d.color;
-      chart.data.datasets[0].backgroundColor = `${d.color}1a`;
-      chart.update();
-    }
+      document.getElementById('chart-badge').innerText = d.badge;
+      document.getElementById('strategy-summary').innerText = d.summary;
 
-    function recalc() {
-      const v = parseFloat(document.getElementById('calc-seed').value) || 0;
-      document.getElementById('res-snow').innerText = (v * 24.55 / 100000000).toFixed(2) + '억 원';
-      document.getElementById('res-fox').innerText = (v * 32.4 / 100000000).toFixed(2) + '억 원';
-      document.getElementById('res-shield').innerText = (v * 10.24 / 100000000).toFixed(2) + '억 원';
-    }
+      // 3. Update Rules List
+      const rulesUl = document.getElementById('strategy-rules');
+      rulesUl.innerHTML = d.rules.map(r => `
+        <li class="flex items-start gap-2.5">
+          <i class="fa-solid fa-check text-indigo-400 mt-0.5"></i>
+          <span>${r}</span>
+        </li>
+      `).join('');
 
-    function openModal() { document.getElementById('sub-modal').classList.remove('hidden'); document.getElementById('sub-modal').classList.add('flex'); }
-    function closeModal() { document.getElementById('sub-modal').classList.add('hidden'); document.getElementById('sub-modal').classList.remove('flex'); }
-
-    async function submitSubscribe() {
-      const name = document.getElementById('sub-name').value;
-      const phone = document.getElementById('sub-phone').value;
-      const bot = document.getElementById('sub-bot').value;
-      if (!name || !phone) return alert('이름과 휴대폰 번호를 모두 입력해주세요.');
+      // 4. Update Chart
+      chartInstance.data.labels = d.labels;
+      chartInstance.data.datasets[0].data = d.data;
+      chartInstance.data.datasets[0].borderColor = d.color;
+      chartInstance.data.datasets[0].pointBackgroundColor = d.color;
+      chartInstance.data.datasets[0].backgroundColor = d.color === '#6366f1' 
+        ? 'rgba(99, 102, 241, 0.12)' 
+        : (d.color === '#f59e0b' ? 'rgba(245, 158, 11, 0.12)' : 'rgba(16, 185, 129, 0.12)');
       
-      try {
-        const res = await fetch('/api/subscribe', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, phone, preferred_bot: bot })
-        });
-        const result = await res.json();
-        alert(result.message);
-        closeModal();
-      } catch (e) {
-        alert('신청 처리 중 오류가 발생했습니다.');
-      }
+      chartInstance.update();
     }
 
-    window.addEventListener('DOMContentLoaded', () => { initChart(); recalc(); });
+    // Calculator Logic
+    function calculateReturns() {
+      const seed = parseFloat(document.getElementById('calc-seed-input').value) || 0;
+      
+      const snowVal = seed * 24.55;
+      const foxVal = seed * 32.4;
+      const shieldVal = seed * 10.24;
+
+      document.getElementById('res-snow').innerText = formatKRW(snowVal);
+      document.getElementById('res-fox').innerText = formatKRW(foxVal);
+      document.getElementById('res-shield').innerText = formatKRW(shieldVal);
+    }
+
+    function setSeed(val) {
+      document.getElementById('calc-seed-input').value = val;
+      calculateReturns();
+    }
+
+    function formatKRW(val) {
+      if (val >= 100000000) {
+        const eok = (val / 100000000).toFixed(1);
+        return `${eok}억 원`;
+      } else if (val >= 10000) {
+        const man = Math.round(val / 10000).toLocaleString();
+        return `${man}만 원`;
+      }
+      return `${Math.round(val).toLocaleString()}원`;
+    }
+
+    // Modal Handlers
+    function openModal() {
+      const m = document.getElementById('sub-modal');
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+    function closeModal() {
+      const m = document.getElementById('sub-modal');
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+    function submitSub() {
+      alert('구독 신청이 성공적으로 접수되었습니다! (체험판 알림톡이 발송됩니다)');
+      closeModal();
+    }
+
+    // Init on load
+    window.addEventListener('DOMContentLoaded', () => {
+      initChart();
+      calculateReturns();
+    });
   </script>
 </body>
 </html>
